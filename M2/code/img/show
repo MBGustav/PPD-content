@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [ ! $1 ]; then 
+	echo Uso: $0 imgfile     // sem extensão .rgba
+	exit
+fi
+
+convert -verbose -size 512x512 -depth 8 $1.rgba show:
+
