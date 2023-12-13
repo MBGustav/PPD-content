@@ -72,19 +72,23 @@ main(int argc, char **argv)
 	// Aplicar filtro (estêncil), separadamente para componentes R, G, B e A
 
 	// Tratar: linhas 0 e n-1; colunas 0 e n-1
-	
+	#pragma omp parallel 
+	{
 		int i,j,x,y;
-
-		for(i=1; i < nlin-1; i+=1) {
-		for(j=1; j < ncol-1; j+=1) {
-		
-			mr2[i][j] = smooth_filter(mr, i, j);
-			mg2[i][j] = smooth_filter(mg, i, j);
-			mb2[i][j] = smooth_filter(mb, i, j);
-			ma2[i][j] = smooth_filter(ma, i, j);
-		
+		#pragma omp for private(i,j,x,y)
+		for(i=1; i < nlin -1; i+=TILE_SIZE) {
+		for(j=1; j < ncol -1; j+=TILE_SIZE) {
+			for(x = i ; x < i + TILE_SIZE; x++)
+			for(y = j ; y < j + TILE_SIZE; y++)
+			{
+				mr2[x][y] = smooth_filter(mr, x, y);
+				mg2[x][y] = smooth_filter(mg, x, y);
+				mb2[x][y] = smooth_filter(mb, x, y);
+				ma2[x][y] = smooth_filter(ma, x, y);
+			}
 		}
 		}
+	}
 	// gravar imagem resultante
 	fdo=open("out.rgba",O_WRONLY|O_CREAT,0644);
 

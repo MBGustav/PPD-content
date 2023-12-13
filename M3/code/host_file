@@ -1,0 +1,29 @@
+localhost slots=4
+
+# O arquivo de hosts é um arquivo texto, contendo, em cada linha, a especificação
+# de um computador onde é possível iniciar a execução das aplicações.
+#
+# no1.domain.com
+# no2.domain.com
+
+# A ordem dos hosts listados pode não ser seguida na ativação do programa.
+# Para cada host, é possível especificar também o número de "slots", que representa
+# o número de instâncias (processos) que podem ser ativadas neste nó.
+# Normalmente, esse número é relacionado ao número de processadores disponíveis no nó.
+#
+# no1 slots=2
+# no2 slots=2
+# no3 slots=4
+
+# O número máximo de slots também pode ser especificado e indica o número
+# máximo de processos que podem ser atribuídos ao nó.
+#
+# no1 slots=4 max-slots=4
+
+# Uma vez definidos os computadores disponíveis no arquivo de hosts, a indicação
+# de quais computadores usar pode ser feita especificando o nome do arquivo na
+# ativação do programa
+#
+# $ mpirun -np 4 --hostfile hosts prog
+# ou
+# $ mpiru -np 4 --machinefile hosts prog

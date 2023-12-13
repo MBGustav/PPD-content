@@ -18,21 +18,25 @@
 #include <unistd.h>
 
 #define TILE_SIZE (16)
-#define WIDTH  512
-#define HEIGHT 512
+#define WIDTH  (512)
+#define HEIGHT (512)
 
-#define smooth_filter(A,i, j) (( A[i-1][j-1] + A[i-1][j] + A[i-1][j+1] +      \
-	      		                A[i]  [j-1] + A[i]  [j] + A[i]  [j+1] +       \
-      			                A[i+1][j-1] + A[i+1][j] + A[i+1][j+1] ) >> 4);
+#define _idx(x, y) ((WIDTH)*(x) + (y))
 
-int mr [WIDTH][HEIGHT];
-int mg [WIDTH][HEIGHT];
-int mb [WIDTH][HEIGHT];
-int ma [WIDTH][HEIGHT];
-int mr2 [WIDTH][HEIGHT];
-int mg2 [WIDTH][HEIGHT];
-int mb2 [WIDTH][HEIGHT];
-int ma2 [WIDTH][HEIGHT];
+
+#define smooth_filter(A,i, j) (( A[_idx(i-1, j-1)] +   A[_idx(i-1, j)] + A[_idx(i-1, j+1)] +  \
+	      		                 A[_idx(i  , j-1)] +   A[_idx(i  , j)] + A[_idx(i  , j+1)] +  \
+      			                 A[_idx(i+1, j-1)] +   A[_idx(i+1, j)] + A[_idx(i+1, j+1)] ) >> 4);
+
+
+int mr [WIDTH * HEIGHT];
+int mg [WIDTH * HEIGHT];
+int mb [WIDTH * HEIGHT];
+int ma [WIDTH * HEIGHT];
+int mr2[WIDTH * HEIGHT];
+int mg2[WIDTH * HEIGHT];
+int mb2[WIDTH * HEIGHT];
+int ma2[WIDTH * HEIGHT];
 
 int 
 main(int argc, char **argv)
@@ -61,10 +65,10 @@ main(int argc, char **argv)
 	// Ordem de leitura dos bytes (componentes do pixel): RGBA?
 	for(i=0; i < nlin; i++) {
 		for(j=0; j < ncol; j++) {
-			read(fdi,&mr[i][j],1);
-			read(fdi,&mg[i][j],1);
-			read(fdi,&mb[i][j],1);
-			read(fdi,&ma[i][j],1);
+			read(fdi,&mr[_idx(i, j)],1);
+			read(fdi,&mg[_idx(i, j)],1);
+			read(fdi,&mb[_idx(i, j)],1);
+			read(fdi,&ma[_idx(i, j)],1);
 		}
 	}
 	close(fdi);
@@ -72,28 +76,29 @@ main(int argc, char **argv)
 	// Aplicar filtro (estêncil), separadamente para componentes R, G, B e A
 
 	// Tratar: linhas 0 e n-1; colunas 0 e n-1
-	
+	#pragma omp parallel 
+	{
 		int i,j,x,y;
+		#pragma omp for private(i, j, x, y) shared()
+		for(i=1; i < nlin -1; i+=1) {
+		for(j=1; j < ncol -1; j+=1) {
+			mr2[_idx(i,j)] = smooth_filter(mr, i, j);
+			mg2[_idx(i,j)] = smooth_filter(mg, i, j);
+			mb2[_idx(i,j)] = smooth_filter(mb, i, j);
+			ma2[_idx(i,j)] = smooth_filter(ma, i, j);
+		}
+		}
+	}
 
-		for(i=1; i < nlin-1; i+=1) {
-		for(j=1; j < ncol-1; j+=1) {
-		
-			mr2[i][j] = smooth_filter(mr, i, j);
-			mg2[i][j] = smooth_filter(mg, i, j);
-			mb2[i][j] = smooth_filter(mb, i, j);
-			ma2[i][j] = smooth_filter(ma, i, j);
-		
-		}
-		}
 	// gravar imagem resultante
 	fdo=open("out.rgba",O_WRONLY|O_CREAT,0644);
 
 	for(i=0; i < nlin; i++) {
 		for(j=0; j < ncol; j++) {
-			write(fdo,&mr2[i][j], 1);
-			write(fdo,&mg2[i][j], 1);
-			write(fdo,&mb2[i][j], 1);
-			write(fdo,&ma2[i][j], 1);
+			write(fdo,&mr2[_idx(i, j)], 1);
+			write(fdo,&mg2[_idx(i, j)], 1);
+			write(fdo,&mb2[_idx(i, j)], 1);
+			write(fdo,&ma2[_idx(i, j)], 1);
 		}
 	}
 	close(fdo);
